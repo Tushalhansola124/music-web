@@ -12,6 +12,7 @@ const likeSongRouter = require("./routes/likeSong.route")
 const playlistRouter = require("./routes/playlist.route")
 const profileRouter = require("./routes/profile.route");
 const userRouter = require("./routes/user.route")
+const playRouter = require("./routes/play.route")
 
 const app = express();
 connectToDB()
@@ -32,7 +33,7 @@ app.use("/api/likeSong",likeSongRouter)
 app.use("/api/playlist", playlistRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/users",userRouter)
-
+app.use("/api/play", playRouter);
 app.get("/test",(req,res)=>{
     res.send("API is working fine");
 })
