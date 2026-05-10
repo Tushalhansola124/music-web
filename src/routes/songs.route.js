@@ -63,5 +63,11 @@ router.put(
   ]),
   songContoller.updateSong
 );
+router.post(
+  "/play/:id",
+  verifyJWT,
+  songContoller.playSong
+);
+
 
 module.exports = router;
