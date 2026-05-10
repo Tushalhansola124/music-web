@@ -12,11 +12,11 @@ const likeSongRouter = require("./routes/likeSong.route")
 const playlistRouter = require("./routes/playlist.route")
 const profileRouter = require("./routes/profile.route");
 const userRouter = require("./routes/user.route")
-
+const cors = require("cors");
 
 const app = express();
 connectToDB()
-
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
