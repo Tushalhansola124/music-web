@@ -12,7 +12,7 @@ const { checkRole} = require("../middlewares/role.middleware")
 router.post(
   "/like/:songId",
   verifyJWT,
-  checkRole("user"),
+  checkRole("user","admin"),
   likeController.likeSong
 );
 
@@ -20,7 +20,7 @@ router.post(
 router.delete(
   "/unlike/:songId",
   verifyJWT,
-   checkRole("user"),
+   checkRole("user","admin"),
   likeController.unlikeSong
 );
 

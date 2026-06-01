@@ -40,39 +40,105 @@ async function register(req,res){
     }
 }
 
-async function login(req,res){
-    const { username , email, password } = req.body;
-    try{
-      const user = await userModel.findOne({
-    $or: [
-        { username: username },
-        { email: email }
-    ]
-   });
-        if(!user){
-            return res.status(404).json({message:"User not found"})
-        }
+// async function login(req,res){
+//     const { username , email, password } = req.body;
+//     try{
+//       const user = await userModel.findOne({
+//     $or: [
+//         { username: username },
+//         { email: email }
+//     ]
+//    });
+//         if(!user){
+//             return res.status(404).json({message:"User not found"})
+//         }
 
-        const isPasswordValid = await bcrypt.compare(password,user.password);
-        if(!isPasswordValid){
-            return res.status(401).json({message:"Invalid password"})
-        }
-        const token  = jwt.sign({id:user._id,role:user.role},process.env.JWT_SECRET)
-        res.cookie('token',token)
-        return res.status(200).json({message:"Login successful", user:{
-            id:user._id,
-            firstName:user.firstName,
-            lastName:user.lastName,
-            username:user.username,
-            email:user.email,
-            mobileNumber:user.mobileNumber,
-            role:user.role
-        },token})
+//         const isPasswordValid = await bcrypt.compare(password,user.password);
+//         if(!isPasswordValid){
+//             return res.status(401).json({message:"Invalid password",status:401})
+//         }
+//         const token  = jwt.sign({id:user._id,role:user.role},process.env.JWT_SECRET)
+//         res.cookie('token',token)
+//         return res.status(200).json({message:"Login successful",status:200,user:{
+//             id:user._id,
+//             firstName:user.firstName,
+//             lastName:user.lastName,
+//             username:user.username,
+//             email:user.email,
+//             mobileNumber:user.mobileNumber,
+//             role:user.role
+//         },token})
+//     }
+//     catch(err){
+//         return res.status(500).json({message:"Internal server error"});
+//         console.log("Error in login controller",err);
+//     }
+// }
+async function login(req, res) {
+  try {
+
+    const { email, password } = req.body;
+
+    // CHECK EMAIL
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
-    catch(err){
-        return res.status(500).json({message:"Internal server error"});
-        console.log("Error in login controller",err);
+
+    // CHECK PASSWORD
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
+
+    // TOKEN
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    return res.status(200).json({
+      message: "Login successful",
+      status: 200,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        role: user.role,
+      },
+      token,
+    });
+
+  } catch (error) {
+
+    console.log("LOGIN ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+
+  }
 }
 
 // async function login(req,res){

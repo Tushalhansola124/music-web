@@ -15,7 +15,13 @@ async function createSong(req, res) {
       duration,
       isPublished,
     } = req.body;
+    const [minutes, seconds] =
+   duration.split(":")
 
+const totalDuration =
+   Number(minutes) * 60 +
+   Number(seconds)
+   
     // 1. Files check
     const audioFile     = req.files?.audio?.[0];
     const thumbnailFile = req.files?.thumbnail?.[0];
@@ -181,41 +187,163 @@ async function updateSong(req, res) {
 }
 
 //get All Songs
-async  function getAllSong(req,res){
-  try{
-          const getAllSong = await songModel.find();
-          return res.status(200).json({
-            message:"Song fetched Successfully!",
-            status:201,
-            data:getAllSong
-          })
-  }
-  catch(err){
-    console.log("Error====>",err)
-    return res.json({
-      message:"The server Error",
-      status:500
-    })
+// async  function getAllSong(req,res){
+//   try{
+//           const getAllSong = await songModel.find();
+//           return res.status(200).json({
+//             message:"Song fetched Successfully!",
+//             status:201,
+//             data:getAllSong
+//           })
+//   }
+//   catch(err){
+//     console.log("Error====>",err)
+//     return res.json({
+//       message:"The server Error",
+//       status:500
+//     })
+//   }
+// }
+async function getAllSong(req, res) {
+
+  try {
+
+    const getAllSong = await songModel
+      .find()
+
+      // =====================================
+      // ARTIST OBJECT
+      // =====================================
+
+      .populate({
+        path: "artist",
+        select: "name bio image followers"
+      })
+
+      // =====================================
+      // ALBUM OBJECT
+      // =====================================
+
+      .populate({
+        path: "album",
+        select: "title coverImage releaseDate"
+      })
+
+      // =====================================
+      // GENRE OBJECT
+      // =====================================
+
+      .populate({
+        path: "genre",
+        select: "name"
+      });
+
+    return res.status(200).json({
+
+      message: "Song fetched Successfully!",
+
+      status: 200,
+
+      data: getAllSong
+
+    });
+
+  } catch (err) {
+
+    console.log("Error====>", err);
+
+    return res.status(500).json({
+
+      message: "The server Error",
+
+      status: 500
+
+    });
   }
 }
 //getByIdgetSong
-async function getByIdSong(req,res){
-  const {id} = req.params;
-  try{
-      const getSong = await  songModel.findById(id);
-      return res.status(200).json({
-        message:"Data fetched Successfully",
-        status:200,
-        data:getSong
+async function getByIdSong(req, res) {
+
+  const { id } = req.params;
+
+  try {
+
+    const getSong = await songModel
+
+      .findById(id)
+
+      // =====================================
+      // ARTIST OBJECT
+      // =====================================
+
+      .populate({
+        path: "artist",
+        select: "name bio image followers"
       })
-  }
-  catch(err){
-    console.log("Get By Id Song:",err)
-    return res.json({
-      message:"the data is not fetched ",
-      status:500
-    
-    })
+
+      // =====================================
+      // ALBUM OBJECT
+      // =====================================
+
+      .populate({
+        path: "album",
+        select: "title coverImage releaseDate"
+      })
+
+      // =====================================
+      // GENRE OBJECT
+      // =====================================
+
+      .populate({
+        path: "genre",
+        select: "name"
+      });
+
+    // =====================================
+    // NOT FOUND
+    // =====================================
+
+    if (!getSong) {
+
+      return res.status(404).json({
+
+        message: "Song not found",
+
+        status: 404,
+
+        data: null
+
+      });
+    }
+
+    // =====================================
+    // SUCCESS
+    // =====================================
+
+    return res.status(200).json({
+
+      message: "Data fetched Successfully",
+
+      status: 200,
+
+      data: getSong
+
+    });
+
+  } catch (err) {
+
+    console.log(
+      "Get By Id Song Error:",
+      err
+    );
+
+    return res.status(500).json({
+
+      message: "The data is not fetched",
+
+      status: 500
+
+    });
   }
 }
 //delete Song

@@ -6,12 +6,7 @@ const playlistModel = require("../models/playlist.model");
 // ======================================
 async function createPlaylist(req, res) {
   try {
-
-    const {
-      name,
-      description,
-      songs,
-    } = req.body;
+    const { name, description, songs } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -20,11 +15,20 @@ async function createPlaylist(req, res) {
       });
     }
 
+    // ✅ FIXED: Handle both Array and String safely
+    let songArray = [];
+
+    if (Array.isArray(songs)) {
+      songArray = songs;
+    } else if (typeof songs === "string") {
+      songArray = songs.split(",").map(id => id.trim()).filter(Boolean);
+    }
+
     const playlist = await playlistModel.create({
       name,
-      description,
+      description: description || "",
       user: req.user._id,
-      songs: songs ? songs.split(",") : [],
+      songs: songArray,           // ← Now always an array
     });
 
     return res.status(201).json({
@@ -34,16 +38,13 @@ async function createPlaylist(req, res) {
     });
 
   } catch (error) {
-
     console.log("createPlaylist error:", error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 }
-
 
 // ======================================
 // Get All Playlists
@@ -108,17 +109,66 @@ async function getPlaylistById(req, res) {
 // ======================================
 // Update Playlist
 // ======================================
+// async function updatePlaylist(req, res) {
+//   try {
+//     const { id } = req.params;
+//     const { name, description, songs } = req.body;
+
+//     const playlist = await playlistModel.findById(id);
+
+//     if (!playlist) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Playlist not found",
+//       });
+//     }
+
+//     // Owner check
+//     if (playlist.user.toString() !== req.user._id.toString()) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "You can update only your playlist",
+//       });
+//     }
+
+//     // Update fields safely
+//     if (name) playlist.name = name;
+//     if (description !== undefined) playlist.description = description;
+
+//     // FIXED: Handle both array and string for songs
+//     if (songs !== undefined) {
+//       if (Array.isArray(songs)) {
+//         playlist.songs = songs;                    // Already array → use directly
+//       } else if (typeof songs === "string") {
+//         playlist.songs = songs.split(",").map(s => s.trim()).filter(Boolean);
+//       } else {
+//         playlist.songs = [];
+//       }
+//     }
+
+//     await playlist.save();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Playlist updated successfully",
+//       data: playlist,
+//     });
+
+//   } catch (error) {
+//     console.log("updatePlaylist error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message || "Internal server error",
+//     });
+//   }
+// }
+
 async function updatePlaylist(req, res) {
   try {
-
     const { id } = req.params;
+    const { name, description, songs } = req.body;
 
-    const {
-      name,
-      description,
-      songs,
-    } = req.body;
-
+    // Find playlist
     const playlist = await playlistModel.findById(id);
 
     if (!playlist) {
@@ -128,46 +178,53 @@ async function updatePlaylist(req, res) {
       });
     }
 
-    // Owner check
+    // Owner Check
     if (playlist.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: "You can update only your playlist",
+        message: "You can only update your own playlist",
       });
     }
 
-    if (name) {
-      playlist.name = name;
+    // Update basic fields
+    if (name !== undefined) playlist.name = name;
+    if (description !== undefined) playlist.description = description;
+
+    // 🔥 FIXED: Handle songs array properly
+    if (songs !== undefined) {
+      if (Array.isArray(songs)) {
+        playlist.songs = songs;                    // Direct array from frontend
+      } else if (typeof songs === "string") {
+        playlist.songs = songs.split(",").map(s => s.trim()).filter(Boolean);
+      } else {
+        playlist.songs = [];
+      }
+
+      // Important for Mongoose arrays
+      playlist.markModified('songs');
     }
 
-    if (description) {
-      playlist.description = description;
-    }
-
-    if (songs) {
-      playlist.songs = songs.split(",");
-    }
-
+    // Save
     await playlist.save();
+
+    // Optional: Populate songs if you want full data in response
+    const updatedPlaylist = await playlistModel.findById(id)
+      .populate('songs');
 
     return res.status(200).json({
       success: true,
       message: "Playlist updated successfully",
-      data: playlist,
+      data: updatedPlaylist || playlist,
     });
 
   } catch (error) {
-
     console.log("updatePlaylist error:", error);
-
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Internal server error",
     });
   }
 }
-
-
 // ======================================
 // Delete Playlist
 // ======================================

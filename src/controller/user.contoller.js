@@ -1,5 +1,7 @@
 const userModel = require("../models/user.model");
 const bcrypt = require("bcryptjs");
+const { uploadFile } = require("../services/storage.services");
+
 
 /*
 =====================================
@@ -7,7 +9,142 @@ CREATE USER
 (Admin Only)
 =====================================
 */
+// async function createUser(req, res) {
+
+//   try {
+
+//     const {
+//       firstName,
+//       lastName,
+//       username,
+//       email,
+//       mobileNumber,
+//       password,
+//       role,
+//     } = req.body;
+
+//     // FILE
+//     const profileImage =
+//       req.file;
+
+//     console.log(
+//       "BODY :",
+//       req.body
+//     );
+
+//     console.log(
+//       "FILE :",
+//       req.file
+//     );
+
+//     /*
+//     VALIDATION
+//     */
+
+//     if (!firstName) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "First name is required",
+//       });
+//     }
+
+//     /*
+//     CHECK EXISTING USER
+//     */
+
+//     const existingUser =
+//       await userModel.findOne({
+//         $or: [
+//           { username },
+//           { email },
+//           { mobileNumber },
+//         ],
+//       });
+
+//     if (existingUser) {
+
+//       return res.status(409).json({
+//         success: false,
+//         message:
+//           "Username, email or mobile number already exists",
+//       });
+//     }
+
+//     /*
+//     HASH PASSWORD
+//     */
+
+//     const hashedPassword =
+//       await bcrypt.hash(
+//         password,
+//         10
+//       );
+
+//     /*
+//     IMAGE PATH
+//     */
+
+//     let imagePath = "";
+
+//     if (profileImage) {
+
+//       imagePath =
+//         profileImage.originalname;
+//     }
+
+//     /*
+//     CREATE USER
+//     */
+
+//     const newUser =
+//       await userModel.create({
+
+//         firstName,
+//         lastName,
+//         username,
+//         email,
+//         mobileNumber,
+
+//         password:
+//           hashedPassword,
+
+//         role:
+//           role || "user",
+
+//         profileImage:
+//           imagePath,
+//       });
+
+//     return res.status(201).json({
+
+//       success: true,
+
+//       message:
+//         "User created successfully",
+
+//       data: newUser,
+//     });
+
+//   } catch (error) {
+
+//     console.log(
+//       "createUser error:",
+//       error
+//     );
+
+//     return res.status(500).json({
+
+//       success: false,
+
+//       message:
+//         "Internal server error",
+//     });
+//   }
+// }
+
 async function createUser(req, res) {
+
   try {
 
     const {
@@ -18,67 +155,24 @@ async function createUser(req, res) {
       mobileNumber,
       password,
       role,
-      profileImage,
     } = req.body;
 
-    /*
-    =============================
-    VALIDATION
-    =============================
-    */
-    if (!firstName) {
+    const profileImage = req.file;
+
+    console.log("BODY :", req.body);
+    console.log("FILE :", profileImage);
+
+    // Validation
+    if (!firstName || !lastName || !username || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "First name is required",
+        message: "All required fields are mandatory",
       });
     }
 
-    if (!lastName) {
-      return res.status(400).json({
-        success: false,
-        message: "Last name is required",
-      });
-    }
-
-    if (!username) {
-      return res.status(400).json({
-        success: false,
-        message: "Username is required",
-      });
-    }
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
-    }
-
-    if (!mobileNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number is required",
-      });
-    }
-
-    if (!password) {
-      return res.status(400).json({
-        success: false,
-        message: "Password is required",
-      });
-    }
-
-    /*
-    =============================
-    CHECK EXISTING USER
-    =============================
-    */
+    // Check existing user
     const existingUser = await userModel.findOne({
-      $or: [
-        { username },
-        { email },
-        { mobileNumber },
-      ],
+      $or: [{ username }, { email }, { mobileNumber }],
     });
 
     if (existingUser) {
@@ -88,18 +182,28 @@ async function createUser(req, res) {
       });
     }
 
-    /*
-    =============================
-    HASH PASSWORD
-    =============================
-    */
+    // Hash Password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    /*
-    =============================
-    CREATE USER
-    =============================
-    */
+    let imageUrl = "";
+
+    // Upload Image using your ImageKit function
+    if (profileImage) {
+      try {
+        const uploadResult = await uploadFile(profileImage.buffer);
+        
+        imageUrl = uploadResult.url;           // Full ImageKit URL
+        console.log("✅ Image uploaded successfully:", imageUrl);
+      } catch (uploadError) {
+        console.error("ImageKit Upload Failed:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to upload profile image",
+        });
+      }
+    }
+
+    // Create User
     const newUser = await userModel.create({
       firstName,
       lastName,
@@ -107,8 +211,8 @@ async function createUser(req, res) {
       email,
       mobileNumber,
       password: hashedPassword,
-      profileImage,
       role: role || "user",
+      profileImage: imageUrl,        // ← Now saving full URL
     });
 
     return res.status(201).json({
@@ -118,15 +222,13 @@ async function createUser(req, res) {
     });
 
   } catch (error) {
-    console.log("createUser error:", error);
-
+    console.error("createUser error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
 }
-
 /*
 =====================================
 GET ALL USERS
