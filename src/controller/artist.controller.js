@@ -1,5 +1,6 @@
 
 const artistModel = require("../models/artist.model");
+const songModel = require("../models/song.model");
 const { uploadFile, deleteFile } = require("../services/storage.services");
 
 //Create Artist 
@@ -145,12 +146,12 @@ async function deleteArtist(req, res) {
 
 //getById 
 
-
 async function getArtistById(req, res) {
   try {
+
     const { id } = req.params;
 
-    
+    // Artist Find
     const artist = await artistModel.findById(id);
 
     if (!artist) {
@@ -160,14 +161,24 @@ async function getArtistById(req, res) {
       });
     }
 
-   
+    // Artist ના બધા Songs
+    const songs = await songModel
+      .find({ artist: id })
+      .populate("album")
+      .populate("genre");
+
     return res.status(200).json({
       success: true,
-      message:"Artist Fetched Successfully",
-      data: artist
+      message: "Artist Fetched Successfully",
+      data: {
+        artist,
+        totalSongs: songs.length,
+        songs
+      }
     });
 
   } catch (error) {
+
     console.error("getArtistById error:", error);
 
     if (error.name === "CastError") {
@@ -183,7 +194,6 @@ async function getArtistById(req, res) {
     });
   }
 }
-
 
 
 module.exports = { createArtist,getallArtist ,updateArtist,deleteArtist,getArtistById};

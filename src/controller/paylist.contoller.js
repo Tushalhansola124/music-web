@@ -77,12 +77,14 @@ async function getAllPlaylists(req, res) {
 // ======================================
 async function getPlaylistById(req, res) {
   try {
-
     const { id } = req.params;
 
     const playlist = await playlistModel
       .findById(id)
-      .populate("songs");
+      .populate({
+        path: "songs",
+        select: "_id title",
+      });
 
     if (!playlist) {
       return res.status(404).json({
@@ -93,18 +95,18 @@ async function getPlaylistById(req, res) {
 
     return res.status(200).json({
       success: true,
+      message: "Playlist fetched successfully",
       data: playlist,
     });
-
   } catch (error) {
+    console.error("getPlaylistById error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 }
-
 
 // ======================================
 // Update Playlist
