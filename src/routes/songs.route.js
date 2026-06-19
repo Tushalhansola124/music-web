@@ -136,8 +136,6 @@ router.post(
 
 router.get(
   "/songGetAll",
-  verifyJWT,
-  checkRole("admin", "artist", "user"),
   songContoller.getAllSong
 );
 
@@ -147,8 +145,6 @@ router.get(
 
 router.get(
   "/getByIdSong/:id",
-  verifyJWT,
-  checkRole("admin", "artist", "user"),
   songContoller.getByIdSong
 );
 

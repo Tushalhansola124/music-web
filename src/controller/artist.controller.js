@@ -165,7 +165,8 @@ async function getArtistById(req, res) {
     const songs = await songModel
       .find({ artist: id })
       .populate("album")
-      .populate("genre");
+      .populate("genre")
+      .populate("artist", "name");
 
     return res.status(200).json({
       success: true,

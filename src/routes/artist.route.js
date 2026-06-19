@@ -12,9 +12,9 @@ const router = express.Router();
 
 router.post("/artistCreate", upload.single("image"),verifyJWT,checkRole("admin"),artistContoller.createArtist);
 router.put("/artistupdate/:id", upload.single("image"),verifyJWT,checkRole("admin","artist"), artistContoller.updateArtist);
-router.get('/getallArtist',verifyJWT,checkRole("admin","artist","user"),artistContoller.getallArtist);
+router.get('/getallArtist',artistContoller.getallArtist);
 router.delete('/artistDelete/:id',verifyJWT,checkRole("admin"),artistContoller.deleteArtist);
-router.get('/getArtistById/:id',verifyJWT,checkRole("admin","artist","user"),artistContoller.getArtistById);
+router.get('/getArtistById/:id',artistContoller.getArtistById);
 
 
 
