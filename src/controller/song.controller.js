@@ -186,81 +186,176 @@ async function updateSong(req, res) {
   }
 }
 
-//get All Songs
-// async  function getAllSong(req,res){
-//   try{
-//           const getAllSong = await songModel.find();
-//           return res.status(200).json({
-//             message:"Song fetched Successfully!",
-//             status:201,
-//             data:getAllSong
-//           })
-//   }
-//   catch(err){
-//     console.log("Error====>",err)
-//     return res.json({
-//       message:"The server Error",
-//       status:500
-//     })
+
+// async function getAllSongs(req, res) {
+
+//   try {
+
+//     const getAllSong = await songModel
+//       .find()
+
+//       // =====================================
+//       // ARTIST OBJECT
+//       // =====================================
+
+//       .populate({
+//         path: "artist",
+//         select: "name bio image followers"
+//       })
+
+//       // =====================================
+//       // ALBUM OBJECT
+//       // =====================================
+
+//       .populate({
+//         path: "album",
+//         select: "title coverImage releaseDate"
+//       })
+
+//       // =====================================
+//       // GENRE OBJECT
+//       // =====================================
+
+//       .populate({
+//         path: "genre",
+//         select: "name"
+//       });
+
+//     return res.status(200).json({
+
+//       message: "Song fetched Successfully!",
+
+//       status: 200,
+
+//       data: getAllSong
+
+//     });
+
+//   } catch (err) {
+
+//     console.log("Error====>", err);
+
+//     return res.status(500).json({
+
+//       message: "The server Error",
+
+//       status: 500
+
+//     });
 //   }
 // }
-async function getAllSong(req, res) {
 
+
+async function getAllSongs(req, res) {
+    try {
+        const { artistId } = req.params;   // Get artist ID from URL params
+
+        // Build query
+        let query = {};
+
+        // If artistId is provided, filter songs by that artist
+        if (artistId) {
+            query.artist = artistId;
+        }
+
+        const getAllSong = await songModel
+            .find(query)                    // Apply filter if artistId exists
+            .populate({
+                path: "artist",
+                select: "name bio image followers"
+            })
+            .populate({
+                path: "album",
+                select: "title coverImage releaseDate"
+            })
+            .populate({
+                path: "genre",
+                select: "name"
+            })
+            .sort({ createdAt: -1 });       // Optional: sort by newest first
+
+        if (getAllSong.length === 0) {
+            return res.status(404).json({
+                message: artistId 
+                    ? "No songs found for this artist" 
+                    : "No songs found",
+                status: 404,
+                data: []
+            });
+        }
+
+        return res.status(200).json({
+            message: "Songs fetched successfully!",
+            status: 200,
+            data: getAllSong
+        });
+
+    } catch (err) {
+        console.error("Error in getAllSongs ===>", err);
+        return res.status(500).json({
+            message: "Server Error",
+            status: 500,
+            error: err.message
+        });
+    }
+}
+
+const getAllSong = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first",
+        status: 401,
+      });
+    }
 
-    const getAllSong = await songModel
-      .find()
+    const { role, _id: userId } = req.user;
 
-      // =====================================
-      // ARTIST OBJECT
-      // =====================================
+    console.log(`[getAllSong] User Role: ${role} | User ID: ${userId}`);
 
+    let filter = {};
+
+    // Artist → Only their own songs
+    if (role === "artist" && userId) {
+      filter = { artist: userId };
+    }
+    // Admin → All songs
+
+    const songs = await songModel
+      .find(filter)
       .populate({
         path: "artist",
-        select: "name bio image followers"
+        select: "name bio image followers",
       })
-
-      // =====================================
-      // ALBUM OBJECT
-      // =====================================
-
       .populate({
         path: "album",
-        select: "title coverImage releaseDate"
+        select: "title coverImage releaseDate",
       })
-
-      // =====================================
-      // GENRE OBJECT
-      // =====================================
-
       .populate({
         path: "genre",
-        select: "name"
-      });
+        select: "name",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({
-
-      message: "Song fetched Successfully!",
-
+      success: true,
+      message: "Songs fetched successfully",
       status: 200,
-
-      data: getAllSong
-
+      count: songs.length,
+      data: songs,
     });
-
-  } catch (err) {
-
-    console.log("Error====>", err);
-
+  } catch (error) {
+    console.error("Error in getAllSong:", error);
     return res.status(500).json({
-
-      message: "The server Error",
-
-      status: 500
-
+      success: false,
+      message: "Internal server error",
+      status: 500,
     });
   }
-}
+};
+
 //getByIdgetSong
 async function getByIdSong(req, res) {
 
@@ -420,4 +515,4 @@ async function playSong(req, res) {
     });
   }
 }
-module.exports = { createSong ,getAllSong,getByIdSong,deleteSong,updateSong,playSong};
+module.exports = { createSong ,getAllSong,getByIdSong,deleteSong,updateSong,playSong,getAllSongs};

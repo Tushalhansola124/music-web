@@ -1,6 +1,5 @@
 const playlistModel = require("../models/playlist.model");
 
-
 // ======================================
 // Create Playlist
 // ======================================
@@ -15,20 +14,18 @@ async function createPlaylist(req, res) {
       });
     }
 
-    // ✅ FIXED: Handle both Array and String safely
     let songArray = [];
-
     if (Array.isArray(songs)) {
       songArray = songs;
     } else if (typeof songs === "string") {
-      songArray = songs.split(",").map(id => id.trim()).filter(Boolean);
+      songArray = songs.split(",").map((id) => id.trim()).filter(Boolean);
     }
 
     const playlist = await playlistModel.create({
       name,
       description: description || "",
       user: req.user._id,
-      songs: songArray,           // ← Now always an array
+      songs: songArray,
     });
 
     return res.status(201).json({
@@ -36,7 +33,6 @@ async function createPlaylist(req, res) {
       message: "Playlist created successfully",
       data: playlist,
     });
-
   } catch (error) {
     console.log("createPlaylist error:", error);
     return res.status(500).json({
@@ -48,12 +44,13 @@ async function createPlaylist(req, res) {
 
 // ======================================
 // Get All Playlists
+// ✅ FIX: Only return playlists belonging to the logged-in user
 // ======================================
 async function getAllPlaylists(req, res) {
   try {
-
+    // ← CHANGED: was .find() which returned ALL users' playlists
     const playlists = await playlistModel
-      .find()
+      .find({ user: req.user._id })
       .populate("songs");
 
     return res.status(200).json({
@@ -61,16 +58,13 @@ async function getAllPlaylists(req, res) {
       total: playlists.length,
       data: playlists,
     });
-
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 }
-
 
 // ======================================
 // Get Playlist By Id
@@ -79,12 +73,10 @@ async function getPlaylistById(req, res) {
   try {
     const { id } = req.params;
 
-    const playlist = await playlistModel
-      .findById(id)
-      .populate({
-        path: "songs",
-        select: "_id title",
-      });
+    const playlist = await playlistModel.findById(id).populate({
+      path: "songs",
+      select: "_id title",
+    });
 
     if (!playlist) {
       return res.status(404).json({
@@ -100,7 +92,6 @@ async function getPlaylistById(req, res) {
     });
   } catch (error) {
     console.error("getPlaylistById error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -111,66 +102,11 @@ async function getPlaylistById(req, res) {
 // ======================================
 // Update Playlist
 // ======================================
-// async function updatePlaylist(req, res) {
-//   try {
-//     const { id } = req.params;
-//     const { name, description, songs } = req.body;
-
-//     const playlist = await playlistModel.findById(id);
-
-//     if (!playlist) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Playlist not found",
-//       });
-//     }
-
-//     // Owner check
-//     if (playlist.user.toString() !== req.user._id.toString()) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "You can update only your playlist",
-//       });
-//     }
-
-//     // Update fields safely
-//     if (name) playlist.name = name;
-//     if (description !== undefined) playlist.description = description;
-
-//     // FIXED: Handle both array and string for songs
-//     if (songs !== undefined) {
-//       if (Array.isArray(songs)) {
-//         playlist.songs = songs;                    // Already array → use directly
-//       } else if (typeof songs === "string") {
-//         playlist.songs = songs.split(",").map(s => s.trim()).filter(Boolean);
-//       } else {
-//         playlist.songs = [];
-//       }
-//     }
-
-//     await playlist.save();
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Playlist updated successfully",
-//       data: playlist,
-//     });
-
-//   } catch (error) {
-//     console.log("updatePlaylist error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message || "Internal server error",
-//     });
-//   }
-// }
-
 async function updatePlaylist(req, res) {
   try {
     const { id } = req.params;
     const { name, description, songs } = req.body;
 
-    // Find playlist
     const playlist = await playlistModel.findById(id);
 
     if (!playlist) {
@@ -180,7 +116,6 @@ async function updatePlaylist(req, res) {
       });
     }
 
-    // Owner Check
     if (playlist.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -188,37 +123,29 @@ async function updatePlaylist(req, res) {
       });
     }
 
-    // Update basic fields
     if (name !== undefined) playlist.name = name;
     if (description !== undefined) playlist.description = description;
 
-    // 🔥 FIXED: Handle songs array properly
     if (songs !== undefined) {
       if (Array.isArray(songs)) {
-        playlist.songs = songs;                    // Direct array from frontend
+        playlist.songs = songs;
       } else if (typeof songs === "string") {
-        playlist.songs = songs.split(",").map(s => s.trim()).filter(Boolean);
+        playlist.songs = songs.split(",").map((s) => s.trim()).filter(Boolean);
       } else {
         playlist.songs = [];
       }
-
-      // Important for Mongoose arrays
-      playlist.markModified('songs');
+      playlist.markModified("songs");
     }
 
-    // Save
     await playlist.save();
 
-    // Optional: Populate songs if you want full data in response
-    const updatedPlaylist = await playlistModel.findById(id)
-      .populate('songs');
+    const updatedPlaylist = await playlistModel.findById(id).populate("songs");
 
     return res.status(200).json({
       success: true,
       message: "Playlist updated successfully",
       data: updatedPlaylist || playlist,
     });
-
   } catch (error) {
     console.log("updatePlaylist error:", error);
     return res.status(500).json({
@@ -227,12 +154,12 @@ async function updatePlaylist(req, res) {
     });
   }
 }
+
 // ======================================
 // Delete Playlist
 // ======================================
 async function deletePlaylist(req, res) {
   try {
-
     const { id } = req.params;
 
     const playlist = await playlistModel.findById(id);
@@ -244,11 +171,10 @@ async function deletePlaylist(req, res) {
       });
     }
 
-    // Owner check
     if (playlist.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: "You can delete only your playlist",
+        message: "You can delete only your own playlist",
       });
     }
 
@@ -258,11 +184,8 @@ async function deletePlaylist(req, res) {
       success: true,
       message: "Playlist deleted successfully",
     });
-
   } catch (error) {
-
     console.log("deletePlaylist error:", error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -270,13 +193,11 @@ async function deletePlaylist(req, res) {
   }
 }
 
-
 // ======================================
 // Add Song To Playlist
 // ======================================
 async function addSongToPlaylist(req, res) {
   try {
-
     const { playlistId, songId } = req.params;
 
     const playlist = await playlistModel.findById(playlistId);
@@ -288,24 +209,23 @@ async function addSongToPlaylist(req, res) {
       });
     }
 
-    // Owner check
+    // ✅ FIX: Now this will never fire because getAllPlaylists
+    // only returns the user's own playlists
     if (playlist.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Access denied",
+        message: "Access denied. You can only modify your own playlists.",
       });
     }
 
-    // Already exists check
-    if (playlist.songs.includes(songId)) {
+    if (playlist.songs.map((id) => id.toString()).includes(songId)) {
       return res.status(400).json({
         success: false,
-        message: "Song already added",
+        message: "Song already in playlist",
       });
     }
 
     playlist.songs.push(songId);
-
     await playlist.save();
 
     return res.status(200).json({
@@ -313,9 +233,7 @@ async function addSongToPlaylist(req, res) {
       message: "Song added successfully",
       data: playlist,
     });
-
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -323,13 +241,11 @@ async function addSongToPlaylist(req, res) {
   }
 }
 
-
 // ======================================
 // Remove Song From Playlist
 // ======================================
 async function removeSongFromPlaylist(req, res) {
   try {
-
     const { playlistId, songId } = req.params;
 
     const playlist = await playlistModel.findById(playlistId);
@@ -341,11 +257,10 @@ async function removeSongFromPlaylist(req, res) {
       });
     }
 
-    // Owner check
     if (playlist.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Access denied",
+        message: "Access denied. You can only modify your own playlists.",
       });
     }
 
@@ -360,16 +275,13 @@ async function removeSongFromPlaylist(req, res) {
       message: "Song removed successfully",
       data: playlist,
     });
-
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 }
-
 
 module.exports = {
   createPlaylist,

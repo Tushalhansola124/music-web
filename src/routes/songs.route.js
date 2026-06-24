@@ -134,10 +134,27 @@ router.post(
 // GET ALL SONGS
 // =====================================
 
-router.get(
-  "/songGetAll",
-  songContoller.getAllSong
-);
+// router.get(
+//   "/songGetAll",
+//   songContoller.getAllSong
+// );
+
+// router.get(
+//   "/songGetAll",
+//   verifyJWT,
+//   checkRole("admin", "artist"),
+//   songContoller.getAllSong,  
+// );
+
+// router.get(
+//   "/songsGetAll",
+//     verifyJWT,
+//    checkRole("admin", "artist"),
+//   songContoller.getAllSongs,
+
+// );
+
+router.get("/songs/:artistId", verifyJWT, checkRole("admin", "artist"), songContoller.getAllSongs);
 
 // =====================================
 // GET SONG BY ID

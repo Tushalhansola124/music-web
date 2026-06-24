@@ -20,7 +20,12 @@ const artistSchema = new mongoose.Schema({
   followers: {
     type: Number,
     default: 0
-  }
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",           
+    required: [true, "User is required"]
+  },
 }, {
   timestamps: true
 });

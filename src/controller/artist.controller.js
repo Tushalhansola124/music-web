@@ -1,6 +1,7 @@
 
 const artistModel = require("../models/artist.model");
 const songModel = require("../models/song.model");
+const userModel = require("../models/user.model");
 const { uploadFile, deleteFile } = require("../services/storage.services");
 
 //Create Artist 
@@ -28,6 +29,7 @@ async function createArtist(req, res) {
       bio,
       image:       imageResult.url,
       imageFileId: imageResult.fileId,
+      user: req.user._id
     });
 
     return res.status(201).json({
