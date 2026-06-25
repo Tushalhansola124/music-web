@@ -134,10 +134,11 @@ router.post(
 // GET ALL SONGS
 // =====================================
 
-// router.get(
-//   "/songGetAll",
-//   songContoller.getAllSong
-// );
+router.get(
+  "/songGetAll",
+  verifyJWT,
+  songContoller.getAllSong
+);
 
 // router.get(
 //   "/songGetAll",

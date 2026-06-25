@@ -302,6 +302,7 @@ async function getAllSongs(req, res) {
 
 const getAllSong = async (req, res) => {
   try {
+    // User login check
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -310,20 +311,8 @@ const getAllSong = async (req, res) => {
       });
     }
 
-    const { role, _id: userId } = req.user;
-
-    console.log(`[getAllSong] User Role: ${role} | User ID: ${userId}`);
-
-    let filter = {};
-
-    // Artist → Only their own songs
-    if (role === "artist" && userId) {
-      filter = { artist: userId };
-    }
-    // Admin → All songs
-
     const songs = await songModel
-      .find(filter)
+      .find()
       .populate({
         path: "artist",
         select: "name bio image followers",
@@ -348,10 +337,12 @@ const getAllSong = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getAllSong:", error);
+
     return res.status(500).json({
       success: false,
       message: "Internal server error",
       status: 500,
+      error: error.message,
     });
   }
 };
