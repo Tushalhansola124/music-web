@@ -6,7 +6,8 @@ const {
   getAllAlbums,
   getAlbumById,
   updateAlbum,
-  deleteAlbum
+  deleteAlbum,
+  getAllAlbumsForArtist
 } = require("../controller/album.controller");
 const { verifyJWT } = require("../middlewares/auth.middleware");
 const { checkRole } = require("../middlewares/role.middleware");
@@ -31,6 +32,15 @@ router.post(
 // GET ALL
 router.get("/all",  verifyJWT,
   checkRole("admin", "artist","users"), getAllAlbums);
+
+
+//get the artist using user id 
+router.get(
+  "/artist/albums",
+  verifyJWT,
+  checkRole("admin","artist"),
+  getAllAlbumsForArtist
+);
 
 // GET BY ID
 router.get("/:id",   verifyJWT,

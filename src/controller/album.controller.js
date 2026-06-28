@@ -1,4 +1,5 @@
 const albumModel = require("../models/album.model");
+const artistModel = require("../models/artist.model");
 const { uploadFile, deleteFile } = require("../services/storage.services");
 
 
@@ -90,6 +91,47 @@ async function getAllAlbums(req, res) {
   }
 }
 
+
+// Get The Albums for UserId to Login Artist 
+async function getAllAlbumsForArtist(req, res) {
+  try {
+    console.log("JWT User:", req.user);
+
+    // Find artist linked to logged-in user
+    const artist = await artistModel.findOne({
+      user: req.user._id,
+    });
+
+    if (!artist) {
+      return res.status(404).json({
+        success: false,
+        message: "Artist profile not found",
+      });
+    }
+
+    console.log("Artist:", artist);
+
+    // Get all albums of this artist
+    const albums = await albumModel
+      .find({ artist: artist._id })
+      .populate("artist")
+      .select("-songs");
+
+    return res.status(200).json({
+      success: true,
+      total: albums.length,
+      data: albums,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
 
 // =========================
 // GET ALBUM BY ID
@@ -232,4 +274,5 @@ module.exports = {
   getAlbumById,
   updateAlbum,
   deleteAlbum,
+  getAllAlbumsForArtist,
 };

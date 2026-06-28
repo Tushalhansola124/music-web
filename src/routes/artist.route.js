@@ -15,6 +15,7 @@ router.put("/artistupdate/:id", upload.single("image"),verifyJWT,checkRole("admi
 router.get('/getallArtist',artistContoller.getallArtist);
 router.delete('/artistDelete/:id',verifyJWT,checkRole("admin"),artistContoller.deleteArtist);
 router.get('/getArtistById/:id',artistContoller.getArtistById);
+router.get("/my-artist",verifyJWT,checkRole("artist"),artistContoller.getMyArtist);
 
 
 

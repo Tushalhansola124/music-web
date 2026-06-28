@@ -1,6 +1,7 @@
 const userModel = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const artistModel = require("../models/artist.model");
 
 async function register(req,res){
     try{
@@ -74,12 +75,12 @@ async function register(req,res){
 //         console.log("Error in login controller",err);
 //     }
 // }
+
+
 async function login(req, res) {
   try {
-
     const { email, password } = req.body;
 
-    // CHECK EMAIL
     const user = await userModel.findOne({ email });
 
     if (!user) {
@@ -89,11 +90,7 @@ async function login(req, res) {
       });
     }
 
-    // CHECK PASSWORD
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -102,11 +99,24 @@ async function login(req, res) {
       });
     }
 
-    // TOKEN
+    let artistId = null;
+    let artistName = null;
+
+    if (user.role === "artist") {
+      const artist = await artistModel.findOne({ user: user._id });
+
+      if (artist) {
+        artistId = artist._id;
+        artistName = artist.name;
+      }
+    }
+
+    // JWT Token
     const token = jwt.sign(
       {
         id: user._id,
         role: user.role,
+        artistId: artistId, // ✅ Add artistId
       },
       process.env.JWT_SECRET,
       {
@@ -115,8 +125,8 @@ async function login(req, res) {
     );
 
     return res.status(200).json({
+      success: true,
       message: "Login successful",
-      status: 200,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -125,20 +135,19 @@ async function login(req, res) {
         email: user.email,
         mobileNumber: user.mobileNumber,
         role: user.role,
+        artistId,
+        artistName,
       },
       token,
     });
 
   } catch (error) {
-
-    console.log("LOGIN ERROR:", error);
-
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
-
   }
 }
+
 
 module.exports = {register,login}
