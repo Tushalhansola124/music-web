@@ -298,11 +298,11 @@ async function getUserById(req, res) {
 UPDATE USER
 =====================================
 */
+
 async function updateUser(req, res) {
   try {
-
     const { id } = req.params;
-
+ 
     const {
       firstName,
       lastName,
@@ -310,42 +310,60 @@ async function updateUser(req, res) {
       email,
       mobileNumber,
       role,
-    profileImage, 
-
       isBlocked,
     } = req.body;
-
+ 
     const user = await userModel.findById(id);
-
+ 
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
-
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (username) user.username = username;
-    if (email) user.email = email;
+ 
+    if (firstName)    user.firstName    = firstName;
+    if (lastName)     user.lastName     = lastName;
+    if (username)     user.username     = username;
+    if (email)        user.email        = email;
     if (mobileNumber) user.mobileNumber = mobileNumber;
-    if (role) user.role = role;
-
+    if (role)         user.role         = role;
+ 
     if (typeof isBlocked !== "undefined") {
       user.isBlocked = isBlocked;
     }
-
+ 
+    if (req.file) {
+      // Delete old image from ImageKit
+      if (user.profileImageId) {
+        await deleteFile(user.profileImageId);
+      }
+ 
+      // Convert buffer to base64
+      const base64  = req.file.buffer.toString("base64");
+      const dataUri = `data:${req.file.mimetype};base64,${base64}`;
+ 
+      // Upload new image
+      const uploaded = await uploadFile(
+        dataUri,
+        `profile_${id}_${Date.now()}`,
+        "profiles"
+      );
+ 
+      user.profileImage   = uploaded.url;
+      user.profileImageId = uploaded.fileId;
+    }
+ 
     await user.save();
-
+ 
     return res.status(200).json({
       success: true,
       message: "User updated successfully",
       data: user,
     });
-
+ 
   } catch (error) {
     console.log("updateUser error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Internal server error",

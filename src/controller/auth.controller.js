@@ -132,6 +132,7 @@ async function login(req, res) {
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
+        profileImage: user.profileImage,
         email: user.email,
         mobileNumber: user.mobileNumber,
         role: user.role,

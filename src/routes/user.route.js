@@ -52,7 +52,7 @@ GET => /api/users/:id
 router.get(
   "/:id",
   verifyJWT,
-  checkRole("admin"),
+  checkRole("admin","artist","user"),
   userController.getUserById
 );
 
@@ -66,7 +66,7 @@ PUT => /api/users/:id
 router.put(
   "/update/:id",
   verifyJWT,
-  checkRole("admin"),
+  checkRole("admin","artist","user"),
   upload.single("profileImage"), // IMPORTANT
   userController.updateUser
 );
