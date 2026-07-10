@@ -80,6 +80,16 @@
         type: String,
         required: [true, "Password is required"]
     },
+      
+    otp: {
+    type: String,
+    default: null,
+     },
+
+    otpExpire: {
+    type: Date,
+    default: null,
+    },
     role: {
         type: String,
         enum: ["admin", "artist", "user"],

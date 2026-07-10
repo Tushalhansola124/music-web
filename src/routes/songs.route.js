@@ -164,7 +164,7 @@ router.get("/songs/:artistId", verifyJWT, checkRole("admin", "artist"), songCont
 router.get(
   "/getByIdSong/:id",
   verifyJWT,
-  checkRole("admin", "artist"),
+  checkRole("admin", "artist","user"),
   songContoller.getByIdSong
 );
 

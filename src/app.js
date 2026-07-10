@@ -11,21 +11,13 @@ const genreRouter = require("./routes/genre.route");
 const likeSongRouter = require("./routes/likeSong.route")
 const playlistRouter = require("./routes/playlist.route")
 const profileRouter = require("./routes/profile.route");
-const userRouter = require("./routes/user.route")
+const userRouter = require("./routes/user.route");
+const forgotPasswordRouter = require("./routes/forgotPassword.route");
 const cors = require("cors");
 
 const app = express();
 connectToDB()
-// app.use(cors());
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3001",
-      "http://10.94.132.178:3001", // તમારા Laptop નો IP
-    ],
-    credentials: true,
-  })
-)
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -41,7 +33,8 @@ app.use("/api/genre", genreRouter);
 app.use("/api/likeSong",likeSongRouter)
 app.use("/api/playlist", playlistRouter);
 app.use("/api/profile", profileRouter);
-app.use("/api/users",userRouter)
+app.use("/api/users",userRouter);
+app.use("/api/v1/auth",forgotPasswordRouter);
 app.get("/test",(req,res)=>{
     res.send("API is working fine");
 })

@@ -8,10 +8,33 @@ const router = express.Router();
 // router.post('/artistCreate',artistContoller.createArtist);
 
 
-router.post('/follow/:artistId',checkRole("user"),verifyJWT,followContoller.followArtist);
-router.delete('/unfollow/:artistId',checkRole("user"),verifyJWT,followContoller.unfollowArtist)
-router.get('/following',checkRole("admin","artist","user"),verifyJWT,followContoller.getFollowing)
-router.get('/is-following/:artistId',checkRole("admin","artist","user"),verifyJWT,followContoller.isFollowing)
+router.post(
+  "/follow/:artistId",
+  verifyJWT,
+  checkRole("admin", "user"),
+  followContoller.followArtist
+);
+
+router.delete(
+  "/unfollow/:artistId",
+  verifyJWT,
+  checkRole("admin", "user"),
+  followContoller.unfollowArtist
+);
+
+router.get(
+  "/following",
+  verifyJWT,
+  checkRole("admin", "artist", "user"),
+  followContoller.getFollowing
+);
+
+router.get(
+  "/is-following/:artistId",
+  verifyJWT,
+  checkRole("admin", "artist", "user"),
+  followContoller.isFollowing
+);
 
 
 
