@@ -506,4 +506,95 @@ async function playSong(req, res) {
     });
   }
 }
-module.exports = { createSong ,getAllSong,getByIdSong,deleteSong,updateSong,playSong,getAllSongs};
+
+// ======================================================
+// GET TRENDING SONGS
+// ======================================================
+async function getTrendingSongs(req, res) {
+  try {
+    const limit = Number(req.query.limit) || 10;
+
+    const trendingSongs = await songModel
+      .find({
+        isPublished: true,
+      })
+      .populate({
+        path: "artist",
+        select: "name bio image followers",
+      })
+      .populate({
+        path: "album",
+        select: "title coverImage",
+      })
+      .sort({ plays: -1, createdAt: -1 }) // Highest play first, latest if tie
+      .limit(limit)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Trending songs fetched successfully",
+      status: 200,
+      count: trendingSongs.length,
+      data: trendingSongs,
+    });
+  } catch (error) {
+    console.error("Get Trending Songs Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      status: 500,
+    });
+  }
+}
+
+
+
+
+const searchSongs = async (req, res) => {
+  try {
+    const { q, limit = 10 } = req.query;
+
+    if (!q || !q.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Search keyword is required",
+      });
+    }
+
+    // Escape Regex Special Characters
+    const escapeRegex = (text) => {
+      return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    };
+
+    const regex = new RegExp(escapeRegex(q.trim()), "i");
+
+    const songs = await songModel
+      .find({
+        isPublished: true,
+        title: regex,
+      })
+      .populate("artist")
+      .populate("album")
+      .select(
+        "title thumbnail audioUrl duration plays likes createdAt artist album"
+      )
+      .sort({ plays: -1 })
+      .limit(Number(limit));
+
+    return res.status(200).json({
+      success: true,
+      total: songs.length,
+      songs,
+    });
+  } catch (error) {
+    console.error("SEARCH SONG ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+module.exports = { createSong ,getAllSong,getByIdSong,deleteSong,updateSong,playSong,getAllSongs,getTrendingSongs,searchSongs};
