@@ -144,7 +144,6 @@ router.get("/getTrendingSongs", verifyJWT, songContoller.getTrendingSongs);
 router.get("/searchSongs",verifyJWT, songContoller.searchSongs);
 
 
-
 // router.get(
 //   "/songGetAll",
 //   verifyJWT,
