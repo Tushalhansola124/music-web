@@ -4,7 +4,7 @@ const songModel = require("../models/song.model");
 const albumModel = require("../models/album.model");
 const genreModel = require("../models/genre.model");
 const playlistModel = require("../models/playlist.model");
-const historyModel = require("../models/history.model"); 
+const historyModel = require("../models/history.model");
 
 // ==============================
 // Get Dashboard Stats (Main API)
@@ -133,27 +133,103 @@ async function getDashboardStats(req, res) {
 // ==============================
 async function getDashboardCounts(req, res) {
   try {
-    const [users, artists, songs, albums, genres, playlists] = await Promise.all([
-      userModel.countDocuments(),
-      artistModel.countDocuments(),
-      songModel.countDocuments(),
-      albumModel.countDocuments(),
-      genreModel.countDocuments(),
-      playlistModel.countDocuments(),
-    ]);
+    const loggedInUser = req.user;
 
-    return res.status(200).json({
-      success: true,
-      message: "Dashboard counts fetched successfully",
-      data: {
-        users,
-        artists,
-        songs,
-        albums,
-        genres,
-        playlists,
-      },
+    // ===============================
+    // ADMIN → Global counts
+    // ===============================
+    if (loggedInUser.role === "admin") {
+      const [users, artists, songs, albums, genres, playlists] = await Promise.all([
+        userModel.countDocuments(),
+        artistModel.countDocuments(),
+        songModel.countDocuments(),
+        albumModel.countDocuments(),
+        genreModel.countDocuments(),
+        playlistModel.countDocuments(),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        message: "Admin dashboard counts fetched successfully",
+        data: {
+          users,
+          artists,
+          songs,
+          albums,
+          genres,
+          playlists,
+        },
+      });
+    }
+
+    // ===============================
+    // ARTIST → Own counts + Lists
+    // ===============================
+    if (loggedInUser.role === "artist") {
+      // User._id thi Artist document find karo
+      const artist = await artistModel
+        .findOne({ user: loggedInUser._id })
+        .select("_id name image");
+
+      if (!artist) {
+        return res.status(404).json({
+          success: false,
+          message: "Artist profile not found. Please complete your artist profile.",
+        });
+      }
+
+      const artistId = artist._id;
+
+      // Counts + Lists ek sathe
+      const [songsCount, albumsCount, playlistsCount, songsList, albumsList] =
+        await Promise.all([
+          // Counts
+          songModel.countDocuments({ artist: artistId }),
+          albumModel.countDocuments({ artist: artistId }),
+          playlistModel.countDocuments({ user: loggedInUser._id }),
+
+          // Songs List (latest first)
+          songModel
+            .find({ artist: artistId })
+            .select("title thumbnail plays likes isPublished createdAt duration")
+            .sort({ createdAt: -1 })
+            .lean(),
+
+          // Albums List (latest first)
+          albumModel
+            .find({ artist: artistId })
+            .select("title coverImage songs createdAt")
+            .sort({ createdAt: -1 })
+            .lean(),
+        ]);
+
+      return res.status(200).json({
+        success: true,
+        message: "Artist dashboard data fetched successfully",
+        data: {
+          artistName: artist.name,
+          artistImage: artist.image || null,
+
+          // Counts
+          songs: songsCount,
+          albums: albumsCount,
+        
+
+          // Lists
+          songsList: songsList,
+          albumsList: albumsList,
+        },
+      });
+    }
+
+    // ===============================
+    // OTHER ROLES
+    // ===============================
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Only Admin or Artist can access dashboard.",
     });
+
   } catch (error) {
     console.log("getDashboardCounts error:", error);
     return res.status(500).json({
@@ -162,7 +238,6 @@ async function getDashboardCounts(req, res) {
     });
   }
 }
-
 // ==============================
 // Users by Role
 // ==============================
