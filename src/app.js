@@ -13,7 +13,8 @@ const playlistRouter = require("./routes/playlist.route")
 const profileRouter = require("./routes/profile.route");
 const userRouter = require("./routes/user.route");
 const forgotPasswordRouter = require("./routes/forgotPassword.route");
-const historyRoutes = require("./routes/history.routes");
+const historyRoutes = require("./routes/history.routes");4
+const dashboardRoutes = require("./routes/dashboard.routes");
 const cors = require("cors");
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api/profile", profileRouter);
 app.use("/api/users",userRouter);
 app.use("/api/v1/auth",forgotPasswordRouter);
 app.use("/api/history", historyRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.get("/test",(req,res)=>{
     res.send("API is working fine");
 })
